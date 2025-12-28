@@ -21,7 +21,10 @@ The system enhances robustness by categorizing a person's state as **Unknown** (
 
 The GIF below illustrates the system's ability to track multiple people and accurately detect falls, highlighting the "Fallen" status in red and triggering the alert window.
 
-![System Demonstration](images/fall_detection_demo01.gif)
+![System Demonstration](output\accidentpeople01_output-ezgif.com-optimize.gif)
+
+![System Demonstration](output\accidentpeople02_output-ezgif.com-optimize.gif)
+
 
 ``
 
@@ -59,3 +62,4 @@ Execute the Python script:
 
 ```bash
 python your_script_name.py
+```
