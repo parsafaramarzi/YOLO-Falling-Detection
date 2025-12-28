@@ -26,8 +26,6 @@ The GIF below illustrates the system's ability to track multiple people and accu
 ![System Demonstration](output\accidentpeople02_output-ezgif.com-optimize.gif)
 
 
-``
-
 ## 🛠️ Prerequisites
 
 To run this code, you need Python and the following libraries:
