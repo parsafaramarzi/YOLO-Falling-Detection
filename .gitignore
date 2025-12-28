@@ -1,4 +1,8 @@
-accidentpeople01.mp4
 framegenerator.py
 yolo11x-pose.pt
 output/yolov11_pose_estimator_detected.mp4
+output/accidentpeople02_output.mp4
+output/accidentpeople01_output.mp4
+cam4.avi
+accidentpeople02.mp4
+accidentpeople01.mp4

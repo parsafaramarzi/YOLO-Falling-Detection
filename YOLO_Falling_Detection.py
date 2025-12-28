@@ -5,6 +5,7 @@ import math
 from ultralytics.utils.plotting import Annotator
 
 VIDEO_PATH = "accidentpeople01.mp4"
+OUTPUT_VIDEO_PATH = "output/accidentpeople01_output.mp4"
 dataset = cv2.VideoCapture(VIDEO_PATH)
 
 if not dataset.isOpened():
@@ -30,15 +31,45 @@ TARGET_HEIGHT = int(TARGET_WIDTH / aspect_ratio)
 RESIZE_DIM = (TARGET_WIDTH, TARGET_HEIGHT)
 
 try:
-    writer = imageio.get_writer("output/yolov11_pose_estimator_detected.mp4", 
-                                fps=dataset.get(cv2.CAP_PROP_FPS),
-                                codec='libx264', quality=8)
+    writer = imageio.get_writer(OUTPUT_VIDEO_PATH, 
+                                 fps=dataset.get(cv2.CAP_PROP_FPS),
+                                 codec='libx264', quality=8)
 except Exception as e:
     print(f"Error initializing video writer: {e}")
     dataset.release()
     exit()
 
 frame_count = 0
+
+def check_inverted_posture(kpts, conf):
+    
+    reference_joints = [5, 6, 11, 12]
+    max_ref_y = -1
+
+    for i in reference_joints:
+        if conf[i] > 0.7:
+            if kpts[i][1] > max_ref_y:
+                 max_ref_y = kpts[i][1]
+                 
+    if max_ref_y == -1:
+        return False
+        
+    is_l_knee_visible = conf[13] > 0.7
+    is_r_knee_visible = conf[14] > 0.7
+    
+    if is_l_knee_visible and is_r_knee_visible:
+        if kpts[13][1] < max_ref_y and kpts[14][1] < max_ref_y:
+            return True
+    
+    is_l_ankle_visible = conf[15] > 0.7
+    is_r_ankle_visible = conf[16] > 0.7
+    
+    if is_l_ankle_visible and is_r_ankle_visible:
+        if kpts[15][1] < max_ref_y and kpts[16][1] < max_ref_y:
+            return True
+
+    return False
+
 
 def analyze_pose_and_draw_keypoints(image, keypoints_xy, keypoints_conf):
     
@@ -74,6 +105,14 @@ def analyze_pose_and_draw_keypoints(image, keypoints_xy, keypoints_conf):
                 pt1 = (int(kpts[start][0]), int(kpts[start][1]))
                 pt2 = (int(kpts[end][0]), int(kpts[end][1]))
                 cv2.line(image, pt1, pt2, (255, 100, 0), 2)
+
+        is_inverted = check_inverted_posture(kpts, conf)
+        
+        if is_inverted:
+            falling_flag = True
+            person_status_details.append((falling_flag, slope_value, is_unknown))
+            continue
+
 
         is_both_shoulders_visible = conf[5] > 0.7 and conf[6] > 0.7
         is_both_hips_visible = conf[11] > 0.7 and conf[12] > 0.7
@@ -120,7 +159,7 @@ def analyze_pose_and_draw_keypoints(image, keypoints_xy, keypoints_conf):
                 
                 if abs(slope_value) < 1.0:
                     falling_flag = True
-                    
+            
             if draw_pose_flag:
                 pt_pA = (int(P_A[0]), int(P_A[1]))
                 pt_pB = (int(P_B[0]), int(P_B[1]))
@@ -166,9 +205,13 @@ def draw_boxes_with_annotator(annotator, boxes, person_status_details):
             box_color = (128, 128, 128)
             status_label = "Unknown"
             slope_text = ""
+        elif falling_flag and slope_value == 0.0:
+            box_color = (0, 0, 255)
+            status_label = "Inverted Posture (Fallen)"
+            slope_text = ""
         elif falling_flag:
             box_color = (0, 0, 255)
-            status_label = "Fallen"
+            status_label = "Fallen (Slope)"
             slope_text = f" | Slope: {slope_value:.2f}"
         else:
             box_color = (0, 255, 0)
